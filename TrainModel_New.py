@@ -6,6 +6,8 @@ import sys
 from sklearn.model_selection import train_test_split
 from ProcessImage import processImg
 
+size = 64
+
 my_faces_path = './faceData/Wentao/'
 other_faces_path = './faceData/Others/'
 
@@ -65,8 +67,8 @@ def conv2d(inputs, filters, kernel_size):
         strides=1,
         padding='same',
         activation=tf.nn.relu,
-        kernel_initializer=tf.random_normal_initializer(stddev=0.01),
-        bias_initializer=tf.random_normal_initializer(stddev=1.0)
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
+        bias_initializer=tf.constant_initializer(0.1)
     )
 
 
@@ -105,16 +107,16 @@ def cnnLayers():
         inputs=drop3_flat,
         units=512,
         activation=tf.nn.relu,
-        kernel_initializer=tf.random_normal_initializer(stddev=0.01),
-        bias_initializer=tf.random_normal_initializer(stddev=1.0)
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
+        bias_initializer=tf.constant_initializer(0.1)
     )
 
     # 输出层
     prediction = tf.layers.dense(
         inputs=fc,
         units=2,
-        kernel_initializer=tf.random_normal_initializer(stddev=0.01),
-        bias_initializer=tf.random_normal_initializer(stddev=1.0)
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
+        bias_initializer=tf.constant_initializer(0.1)
 
     )
 
@@ -157,7 +159,7 @@ def cnnTrain():
                     acc = accuracy.eval({x: test_x, y_: test_y, drop_prob_1: 0.0, drop_prob_2: 0.0})
                     print('acciracy:', n*num_batch + i, acc)
                     # 准确率大于0.98时保存并退出
-                    if acc > 0.98 and n > 2:
+                    if acc > 0.98 and n > 5:
                         saver.save(sess, './model/train_FR.ckpt')
                         sys.exit(0)
 

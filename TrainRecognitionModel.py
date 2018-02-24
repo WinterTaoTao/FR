@@ -197,7 +197,7 @@ def cnnTrain():
                 print(n*num_batch+i, loss)
 
                 if(n*num_batch + i) % 100 == 0:
-                    acc = accuracy.eval({x: test_x, y_: test_y, keep_prob_5:1.0, keep_prob_75:1.0})
+                    acc = accuracy.eval({x: imgs[5000:5100], y_: labels[5000:5100], keep_prob_5:1.0, keep_prob_75:1.0})
                     print(n*num_batch + i, acc)
                     # 准确率大雨0.98时保存并推出
                     if acc > 0.98 and n > 2:

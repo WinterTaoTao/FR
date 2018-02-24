@@ -1,8 +1,11 @@
 import tensorflow as tf
 import detect_face
+import os
 import cv2
 import numpy as np
 from ProcessImage import processImg
+from sklearn.model_selection import train_test_split
+
 
 # # 人脸检测(FD)的参数
 # minsize = 20  # minimum size of face
@@ -35,15 +38,43 @@ from ProcessImage import processImg
 
 # ===========================
 
-img_path = './faceData/Wentao/Wentao-123.jpg'
-img_path_2 = './faceData/Others/Others-4000.jpg'
+size = 64
+
+my_faces_path = './faceData/Wentao/'
+other_faces_path = './faceData/Others/'
+
 imgs = []
+labels = []
 
-img = cv2.imread(img_path)
-img = processImg(img)
-imgs.append(img)
+def readData(path):
+    for filename in os.listdir(path):
+        if filename.endswith('.jpg'):
+            filename = path + filename
+            img = cv2.imread(filename)
+            # top, bottom, left, right = getPaddingSize(img)
+            #
+            # img = cv2.copyMakeBorder(img, top, bottom, left, right,
+            #                          cv2.BORDER_CONSTANT,
+            #                          value=[0, 0, 0])
+            # img = cv2.resize(img, (h, w))
+            img = processImg(img)
+            imgs.append(img)
+            labels.append(path)
 
+
+readData(my_faces_path)
+readData(other_faces_path)
+
+# 将img数据和label数据转换为数组
 imgs = np.array(imgs)
+labels = np.array([[0, 1] if label == my_faces_path else [1, 0] for label in labels])
+
+# 划分测试集合训练集
+train_x, test_x, train_y, test_y = train_test_split(imgs, labels, test_size=0.05)
+
+# reshape input
+train_x = train_x.reshape(train_x.shape[0], size, size, 3)
+test_x = test_x.reshape(test_x.shape[0], size, size, 3)
 
 
 sess_FR = tf.Session()
@@ -53,13 +84,16 @@ saver.restore(sess_FR, './model/train_FR.ckpt')
 graph = tf.get_default_graph()
 
 input_x = graph.get_tensor_by_name('input_x:0')
+label_y = graph.get_tensor_by_name('label_y:0')
 drop_prob_1 = graph.get_tensor_by_name('drop_prob_1:0')
 drop_prob_2 = graph.get_tensor_by_name('drop_prob_2:0')
 
 prediction = graph.get_collection('prediction')[0]
 
-result = tf.argmax(prediction, 1)
+accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(prediction, 1), tf.argmax(label_y, 1)), tf.float32))
 
-res = sess_FR.run(result, feed_dict={input_x: imgs, drop_prob_1: 0.0, drop_prob_2: 0.0})
+# result = tf.argmax(prediction, 1)
+
+res = sess_FR.run(accuracy, feed_dict={input_x: test_x, label_y: test_y, drop_prob_1: 0.0, drop_prob_2: 0.0})
 
 print(res)
