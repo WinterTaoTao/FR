@@ -55,8 +55,8 @@ num_batch = len(train_x) // batch_size
 x = tf.placeholder(tf.float32, [None, size, size, 3], name='input_x')
 y_ = tf.placeholder(tf.float32, [None, 2], name='label_y')
 
-drop_prob_1 = tf.placeholder(tf.float32, name='drop_prob_1')
-drop_prob_2 = tf.placeholder(tf.float32, name='drop_prob_2')
+drop_prob = tf.placeholder(tf.float32, name='drop_prob')
+# drop_prob = tf.placeholder(tf.float32, name='drop_prob_2')
 
 
 def conv2d(inputs, filters, kernel_size):
@@ -66,7 +66,6 @@ def conv2d(inputs, filters, kernel_size):
         kernel_size=kernel_size,
         strides=1,
         padding='same',
-        activation=tf.nn.relu,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
         bias_initializer=tf.constant_initializer(0.1)
     )
@@ -88,18 +87,24 @@ def dropout(inputs, drop_prob):
 def cnnLayers():
     # 第一层
     conv1 = conv2d(inputs=x, filters=32, kernel_size=3)
-    pool1 = maxPool(conv1)
-    drop1 = dropout(pool1, drop_prob=drop_prob_1)
+    batch_nor1 = tf.layers.batch_normalization(conv1)
+    active1 = tf.nn.relu(batch_nor1)
+    pool1 = maxPool(active1)
+    drop1 = dropout(pool1, drop_prob=drop_prob)
 
     # 第二层
     conv2 = conv2d(inputs=drop1, filters=64, kernel_size=3)
-    pool2 = maxPool(conv2)
-    drop2 = dropout(pool2, drop_prob=drop_prob_1)
+    batch_nor2 = tf.layers.batch_normalization(conv2)
+    active2 = tf.nn.relu(batch_nor2)
+    pool2 = maxPool(active2)
+    drop2 = dropout(pool2, drop_prob=drop_prob)
 
     # 第三层
     conv3 = conv2d(inputs=drop2, filters=64, kernel_size=3)
-    pool3 = maxPool(conv3)
-    drop3 = dropout(pool3, drop_prob=drop_prob_1)
+    batch_nor3 = tf.layers.batch_normalization(conv3)
+    active3 = tf.nn.relu(batch_nor3)
+    pool3 = maxPool(active3)
+    drop3 = dropout(pool3, drop_prob=drop_prob)
 
     # 全连接层
     drop3_flat = tf.layers.flatten(drop3)
@@ -110,7 +115,7 @@ def cnnLayers():
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
         bias_initializer=tf.constant_initializer(0.1)
     )
-    drop_fc = dropout(fc, drop_prob=drop_prob_2)
+    drop_fc = dropout(fc, drop_prob=drop_prob)
 
     # 输出层
     prediction = tf.layers.dense(
@@ -121,6 +126,7 @@ def cnnLayers():
     )
 
     return prediction
+
 
 def cnnTrain():
     prediction = cnnLayers()
@@ -150,13 +156,13 @@ def cnnTrain():
                 batch_y = train_y[i * batch_size: (i + 1) * batch_size]
 
                 _, loss, summary = sess.run([train_step, cross_entropy, merged_summary_op],
-                                            feed_dict={x: batch_x, y_: batch_y, drop_prob_1: 0.5, drop_prob_2: 0.5})
+                                            feed_dict={x: batch_x, y_: batch_y, drop_prob: 0.5})
                 summary_writer.add_summary(summary, n*num_batch+i)
 
                 print(n*num_batch+i, loss)
 
                 if(n*num_batch + i) % 100 == 0:
-                    acc = accuracy.eval({x: test_x, y_: test_y, drop_prob_1: 0.0, drop_prob_2: 0.0})
+                    acc = accuracy.eval({x: test_x, y_: test_y, drop_prob: 0.0})
                     print('acciracy:', n*num_batch + i, acc)
                     # 准确率大于0.98时保存并退出
                     if acc > 0.98 and n > 2:

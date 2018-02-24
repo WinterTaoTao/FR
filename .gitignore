@@ -1,4 +1,4 @@
 #ignore these files
 model/*
 faceData/*
-log/*
+logs/*
