@@ -94,6 +94,6 @@ accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(prediction, 1), tf.argmax(l
 
 # result = tf.argmax(prediction, 1)
 
-res = sess_FR.run(accuracy, feed_dict={input_x: test_x, label_y: test_y, drop_prob_1: 0.0, drop_prob_2: 0.0})
+res = sess_FR.run(accuracy, feed_dict={input_x: imgs[5000:6000], label_y: labels[5000:6000], drop_prob_1: 0.0, drop_prob_2: 0.0})
 
 print(res)

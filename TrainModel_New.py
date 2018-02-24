@@ -110,14 +110,14 @@ def cnnLayers():
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
         bias_initializer=tf.constant_initializer(0.1)
     )
+    drop_fc = dropout(fc, drop_prob=drop_prob_2)
 
     # 输出层
     prediction = tf.layers.dense(
-        inputs=fc,
+        inputs=drop_fc,
         units=2,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
         bias_initializer=tf.constant_initializer(0.1)
-
     )
 
     return prediction
@@ -142,7 +142,7 @@ def cnnTrain():
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        summary_writer = tf.summary.FileWriter('./log', graph=tf.get_default_graph())
+        summary_writer = tf.summary.FileWriter('./logs', graph=tf.get_default_graph())
 
         for n in range(10):
             for i in range(num_batch):
@@ -150,7 +150,7 @@ def cnnTrain():
                 batch_y = train_y[i * batch_size: (i + 1) * batch_size]
 
                 _, loss, summary = sess.run([train_step, cross_entropy, merged_summary_op],
-                                            feed_dict={x: batch_x, y_: batch_y, drop_prob_1: 0.5, drop_prob_2: 0.25})
+                                            feed_dict={x: batch_x, y_: batch_y, drop_prob_1: 0.5, drop_prob_2: 0.5})
                 summary_writer.add_summary(summary, n*num_batch+i)
 
                 print(n*num_batch+i, loss)
@@ -159,7 +159,7 @@ def cnnTrain():
                     acc = accuracy.eval({x: test_x, y_: test_y, drop_prob_1: 0.0, drop_prob_2: 0.0})
                     print('acciracy:', n*num_batch + i, acc)
                     # 准确率大于0.98时保存并退出
-                    if acc > 0.98 and n > 5:
+                    if acc > 0.98 and n > 2:
                         saver.save(sess, './model/train_FR.ckpt')
                         sys.exit(0)
 
